@@ -20,7 +20,7 @@ public class FinalRecommendationPanel extends JPanel {
 
         JPanel content = new JPanel(new GridBagLayout());
         content.setBackground(UIConstants.PALE_GREEN);
-        content.setBorder(BorderFactory.createEmptyBorder(30, 30, 20, 30));
+        content.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
         if (result != null) {
             Crop best = result.getBestCrop();
@@ -30,38 +30,96 @@ public class FinalRecommendationPanel extends JPanel {
             String risk = result.getRiskLevel();
 
             GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(10, 10, 10, 10);
+            gbc.insets = new Insets(8, 10, 8, 10);
             gbc.fill = GridBagConstraints.BOTH;
-            gbc.weightx = 1; gbc.weighty = 1;
+            gbc.weightx = 1;
+            gbc.weighty = 0; // will be overridden for rows that need expansion
 
-            // Row 1
-            gbc.gridx = 0; gbc.gridy = 0;
+            int gridy = 0;
+
+            // ---- Crop Recommendation section ----
+            gbc.gridx = 0;
+            gbc.gridy = gridy++;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0;
+            content.add(createSectionHeader("Crop Recommendation"), gbc);
+
+            // Crop & Market cards
+            gbc.gridwidth = 1;
+            gbc.weighty = 1; // cards can expand vertically
+            gbc.gridx = 0;
+            gbc.gridy = gridy;
             content.add(buildInfoCard("🌾", "Best Crop:", crop, new Color(120, 200, 80), new Color(80, 160, 40)), gbc);
 
-            gbc.gridx = 1; gbc.gridy = 0;
+            gbc.gridx = 1;
+            gbc.gridy = gridy;
             content.add(buildInfoCard("📍", "Best Market:", market, new Color(90, 180, 90), new Color(50, 140, 50)), gbc);
+            gridy++; // move to next row after cards
 
-            // Row 2
-            gbc.gridx = 0; gbc.gridy = 1;
+            // ---- Profit Comparison section ----
+            gbc.gridx = 0;
+            gbc.gridy = gridy++;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0;
+            content.add(createSectionHeader("Profit Comparison"), gbc);
+
+            // Profit & Risk cards
+            gbc.gridwidth = 1;
+            gbc.weighty = 1;
+            gbc.gridx = 0;
+            gbc.gridy = gridy;
             content.add(buildInfoCard("💰", "Estimated Profit:", profit, new Color(40, 110, 40), new Color(20, 80, 20)), gbc);
 
-            gbc.gridx = 1; gbc.gridy = 1;
+            gbc.gridx = 1;
+            gbc.gridy = gridy;
             Color riskColor = risk.contains("High") ? new Color(180, 60, 40) : new Color(40, 120, 40);
             Color riskDark  = risk.contains("High") ? new Color(140, 30, 20) : new Color(20, 80, 20);
             content.add(buildInfoCard("⚙️", "Risk Level:", risk, riskColor, riskDark), gbc);
+            gridy++;
 
-            // Download button row
-            GridBagConstraints btnGbc = new GridBagConstraints();
-            btnGbc.gridx = 0; btnGbc.gridy = 2; btnGbc.gridwidth = 2;
-            btnGbc.insets = new Insets(20, 0, 0, 0);
+            // ---- Market Optimization section ----
+            gbc.gridx = 0;
+            gbc.gridy = gridy++;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0;
+            content.add(createSectionHeader("Market Optimization"), gbc);
+
+            // Placeholder panel for market optimization (can be replaced later)
+            JPanel marketPlaceholder = new JPanel(new GridBagLayout());
+            marketPlaceholder.setBackground(UIConstants.PALE_GREEN);
+            marketPlaceholder.setPreferredSize(new Dimension(400, 80));
+            JLabel marketPlaceholderLabel = new JLabel("Market optimization details will appear here");
+            marketPlaceholderLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+            marketPlaceholderLabel.setForeground(new Color(80, 80, 80));
+            marketPlaceholder.add(marketPlaceholderLabel);
+            gbc.gridx = 0;
+            gbc.gridy = gridy++;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0.2; // small vertical space
+            content.add(marketPlaceholder, gbc);
+
+            // ---- Final Recommendation section & Download button ----
+            gbc.gridx = 0;
+            gbc.gridy = gridy++;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0;
+            content.add(createSectionHeader("Final Recommendation"), gbc);
+
+            // Download button
             JButton dlBtn = UIConstants.makeButton("⬇  Download Report");
             dlBtn.setPreferredSize(new Dimension(280, 52));
             dlBtn.addActionListener(e -> JOptionPane.showMessageDialog(frame,
                     "Report saved as SmartFarming_Report.txt\n\n" +
-                    "Best Crop: " + crop + "\nBest Market: " + market +
-                    "\nEstimated Profit: " + profit + "\nRisk Level: " + risk,
+                            "Best Crop: " + crop + "\nBest Market: " + market +
+                            "\nEstimated Profit: " + profit + "\nRisk Level: " + risk,
                     "Download Report", JOptionPane.INFORMATION_MESSAGE));
-            content.add(dlBtn, btnGbc);
+
+            gbc.gridx = 0;
+            gbc.gridy = gridy;
+            gbc.gridwidth = 2;
+            gbc.weighty = 0;
+            gbc.insets = new Insets(20, 10, 10, 10);
+            content.add(dlBtn, gbc);
 
         } else {
             content.add(new JLabel("Run analysis to see final recommendation.", SwingConstants.CENTER));
@@ -71,8 +129,18 @@ public class FinalRecommendationPanel extends JPanel {
         add(main, BorderLayout.CENTER);
     }
 
+    /** Creates a styled section header label */
+    private JLabel createSectionHeader(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        label.setForeground(new Color(30, 80, 30)); // dark green
+        label.setBorder(BorderFactory.createEmptyBorder(15, 5, 5, 5));
+        return label;
+    }
+
+    /** Builds a gradient info card (unchanged from original) */
     private JPanel buildInfoCard(String icon, String label, String value,
-                                  Color colorTop, Color colorBottom) {
+                                 Color colorTop, Color colorBottom) {
         JPanel card = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
