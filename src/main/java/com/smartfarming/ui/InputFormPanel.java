@@ -18,7 +18,7 @@ public class InputFormPanel extends JPanel {
     private JComboBox<String> rainfallCombo;
     private JRadioButton yalaBtn;
     private JRadioButton mahaBtn;
-    private JTextField locationField;
+    private JComboBox<String> locationField;
 
     // Background image
     private Image backgroundImage;
@@ -33,15 +33,6 @@ public class InputFormPanel extends JPanel {
         /* ================= TOP HEADER ================= */
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(UIConstants.DARK_GREEN);
-        /*JPanel topPanel = new JPanel(new BorderLayout()) {
-            Image bg = new ImageIcon("C:\\Users\\User\\Desktop\\Smart crop farming tool\\src\\main\\resources\\background.jpg");
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
-            }
-        };*/
 
         // Left section with SCA Home
         JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
@@ -71,11 +62,23 @@ public class InputFormPanel extends JPanel {
         rainfallCombo = new JComboBox<>(new String[]{"Select", "Low", "Medium", "High"});
         yalaBtn = new JRadioButton("Yala");
         mahaBtn = new JRadioButton("Maha");
-        locationField = new JTextField("give the location here");
+        locationField = new JComboBox<>(new String[]{
+                "Select", "Colombo", "Kandy", "Galle", "Jaffna",
+                "Anuradhapura", "Batticaloa", "Kurunegala", "Matara"
+        });
 
-        // Create semi-transparent panel for the form
-        JPanel formContainer = new JPanel(new GridBagLayout());
-        formContainer.setBackground(UIConstants.WHITE);
+        // ✅ Frosted glass effect - semi-transparent panel so background image shows through
+        JPanel formContainer = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(255, 255, 255, 180)); // white with transparency
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // rounded corners
+                g2d.dispose();
+            }
+        };
+        formContainer.setOpaque(false); // ✅ transparent so background shows through
         formContainer.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -87,7 +90,7 @@ public class InputFormPanel extends JPanel {
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         JLabel formTitle = new JLabel("Farm Input Details");
-        formTitle.setFont(new Font("Arial", Font.BOLD, 20));
+        formTitle.setFont(UIConstants.FONT_TITLE);
         formTitle.setForeground(UIConstants.DARK_GREEN);
         formContainer.add(formTitle, gbc);
 
@@ -165,13 +168,6 @@ public class InputFormPanel extends JPanel {
         locationField.setFont(new Font("Arial", Font.PLAIN, 14));
         locationField.setPreferredSize(new Dimension(200, 30));
         locationField.setBackground(Color.WHITE);
-        locationField.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent e) {
-                if ("Type Here".equals(locationField.getText())) {
-                    locationField.setText("");
-                }
-            }
-        });
         formContainer.add(locationField, gbc);
 
         // Analyze button
@@ -203,21 +199,21 @@ public class InputFormPanel extends JPanel {
         buttonPanel.add(analyzeBtn);
         formContainer.add(buttonPanel, gbc);
 
-        // Action listener with proper null checks
+        // Action listener
         analyzeBtn.addActionListener(e -> {
             String soil = Objects.requireNonNullElse((String) soilCombo.getSelectedItem(), "Select");
             String rain = Objects.requireNonNullElse((String) rainfallCombo.getSelectedItem(), "Select");
             String season = yalaBtn.isSelected() ? "Yala" : "Maha";
-            String loc = locationField.getText().trim();
+            String loc = Objects.requireNonNullElse((String) locationField.getSelectedItem(), "Select");
 
             if ("Select".equals(soil)) soil = "Not Specified";
             if ("Select".equals(rain)) rain = "Not Specified";
-            if (loc.isEmpty() || "Type Here".equals(loc)) loc = "Unknown";
+            if ("Select".equals(loc)) loc = "Unknown";
 
             frame.runAnalysis(new Farm(soil, rain, season, loc));
         });
 
-        // Center the form container
+        // ✅ Center panel transparent so background image shows through
         JPanel centerPanel = new JPanel(new GridBagLayout());
         centerPanel.setOpaque(false);
         centerPanel.add(formContainer);
@@ -226,7 +222,6 @@ public class InputFormPanel extends JPanel {
 
     /**
      * Creates the centered header panel
-     * @return JPanel containing the centered title
      */
     private JPanel createCenterHeader() {
         JPanel centerHeader = new JPanel();
@@ -251,30 +246,26 @@ public class InputFormPanel extends JPanel {
 
     private void loadBackgroundImage() {
         try {
-            // Try to load from resources
             String[] possiblePaths = {
-                    "/farm-landscape.jpg",
-                    "/images/farm-landscape.jpg",
-                    "/background.jpg",
-                    "/resources/farm-landscape.jpg"
+                    "/farm.jpeg"
             };
 
             for (String path : possiblePaths) {
                 java.net.URL imgURL = getClass().getResource(path);
                 if (imgURL != null) {
-                    backgroundImage = Toolkit.getDefaultToolkit().getImage(imgURL);
+                    backgroundImage = javax.imageio.ImageIO.read(imgURL);
                     imageLoaded = true;
                     System.out.println("Background image loaded from: " + path);
                     return;
                 }
             }
 
-            // Try to load from file system as fallback
+            // Fallback: try file system
             String userDir = System.getProperty("user.dir");
             String[] filePaths = {
-                    userDir + "/src/main/resources/farm-landscape.jpg",
-                    userDir + "/resources/farm-landscape.jpg",
-                    userDir + "/farm-landscape.jpg"
+                    userDir + "/src/main/resources/farm.jpeg",
+                    userDir + "/resources/farm.jpeg",
+                    userDir + "/farm.jpeg"
             };
 
             for (String filePath : filePaths) {
@@ -299,16 +290,17 @@ public class InputFormPanel extends JPanel {
         super.paintComponent(g);
 
         Graphics2D g2d = (Graphics2D) g.create();
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
         if (imageLoaded && backgroundImage != null) {
-            // Draw background image
+            // ✅ Draw background image stretched to fill entire panel
             g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
 
-            // Add a very subtle overlay for better text readability
-            g2d.setColor(new Color(255, 255, 255, 30));
+            // Subtle dark overlay for better form readability
+            g2d.setColor(new Color(0, 0, 0, 40));
             g2d.fillRect(0, 0, getWidth(), getHeight());
         } else {
-            // Create a beautiful gradient fallback
+            // Gradient fallback if image not found
             GradientPaint gradient = new GradientPaint(
                     0, 0, new Color(220, 240, 220),
                     getWidth(), getHeight(), new Color(180, 210, 180)
@@ -316,7 +308,6 @@ public class InputFormPanel extends JPanel {
             g2d.setPaint(gradient);
             g2d.fillRect(0, 0, getWidth(), getHeight());
 
-            // Add some decorative elements
             g2d.setColor(new Color(200, 230, 200, 50));
             for (int i = 0; i < 5; i++) {
                 int x = (i * 200) % getWidth();
