@@ -32,7 +32,16 @@ public class InputFormPanel extends JPanel {
 
         /* ================= TOP HEADER ================= */
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(new Color(0, 80, 0));
+        topPanel.setBackground(UIConstants.DARK_GREEN);
+        /*JPanel topPanel = new JPanel(new BorderLayout()) {
+            Image bg = new ImageIcon("C:\\Users\\User\\Desktop\\Smart crop farming tool\\src\\main\\resources\\background.jpg");
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(bg, 0, 0, getWidth(), getHeight(), this);
+            }
+        };*/
 
         // Left section with SCA Home
         JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
@@ -66,7 +75,7 @@ public class InputFormPanel extends JPanel {
 
         // Create semi-transparent panel for the form
         JPanel formContainer = new JPanel(new GridBagLayout());
-        formContainer.setBackground(new Color(255, 255, 255, 220));
+        formContainer.setBackground(UIConstants.WHITE);
         formContainer.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -79,7 +88,7 @@ public class InputFormPanel extends JPanel {
         gbc.gridwidth = 2;
         JLabel formTitle = new JLabel("Farm Input Details");
         formTitle.setFont(new Font("Arial", Font.BOLD, 20));
-        formTitle.setForeground(new Color(0, 80, 0));
+        formTitle.setForeground(UIConstants.DARK_GREEN);
         formContainer.add(formTitle, gbc);
 
         // Reset gridwidth
