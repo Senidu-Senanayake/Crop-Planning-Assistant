@@ -5,13 +5,39 @@ import java.awt.*;
 
 /**
  * Reusable banner header shown on all inner screens.
+ * Glassmorphism style - semi-transparent frosted glass effect.
  */
 public class HeaderBannerPanel extends JPanel {
 
     public HeaderBannerPanel(String screenTitle) {
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(0, 170));
-        setBackground(UIConstants.DARK_GREEN);
+        setOpaque(false); // ✅ transparent so background image shows through
+
+        // ✅ Glassmorphism wrapper panel
+        JPanel glassPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Frosted glass background
+                g2.setColor(new Color(255, 255, 255, 40));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+
+                // Subtle green tint overlay
+                g2.setColor(new Color(20, 80, 20, 120));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+
+                // Bottom border glow line
+                g2.setColor(new Color(255, 255, 255, 60));
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
+
+                g2.dispose();
+            }
+        };
+        glassPanel.setOpaque(false);
 
         // Top text area
         JPanel textArea = new JPanel();
@@ -24,8 +50,30 @@ public class HeaderBannerPanel extends JPanel {
         appTitle.setForeground(UIConstants.WHITE);
         appTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JSeparator sep = new JSeparator();
-        sep.setForeground(new Color(255, 255, 255, 100));
+        // ✅ Glowing separator
+        JSeparator sep = new JSeparator() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(
+                        0, 0, new Color(255, 255, 255, 0),
+                        getWidth() / 2f, 0, new Color(255, 255, 255, 180),
+                        false
+                );
+                // Mirror gradient for symmetry
+                GradientPaint gp2 = new GradientPaint(
+                        getWidth() / 2f, 0, new Color(255, 255, 255, 180),
+                        getWidth(), 0, new Color(255, 255, 255, 0),
+                        false
+                );
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth() / 2, 2);
+                g2.setPaint(gp2);
+                g2.fillRect(getWidth() / 2, 0, getWidth() / 2, 2);
+                g2.dispose();
+            }
+        };
         sep.setMaximumSize(new Dimension(600, 2));
 
         JLabel subtitle = new JLabel("Optimize your crop yield with smart data driven decisions", SwingConstants.CENTER);
@@ -39,23 +87,43 @@ public class HeaderBannerPanel extends JPanel {
         textArea.add(Box.createVerticalStrut(4));
         textArea.add(subtitle);
 
-        // Screen title label at bottom
-        JLabel screenLabel = new JLabel(screenTitle, SwingConstants.CENTER);
+        // ✅ Screen title label with subtle glow text effect
+        JLabel screenLabel = new JLabel(screenTitle, SwingConstants.CENTER) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                // Soft glow shadow behind text
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = fm.getAscent() + (getHeight() - fm.getHeight()) / 2;
+                g2.setColor(new Color(100, 255, 100, 60));
+                for (int i = 1; i <= 4; i++) {
+                    g2.drawString(getText(), x - i, y);
+                    g2.drawString(getText(), x + i, y);
+                    g2.drawString(getText(), x, y - i);
+                    g2.drawString(getText(), x, y + i);
+                }
+                // Actual text
+                g2.setColor(UIConstants.WHITE);
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
         screenLabel.setFont(UIConstants.FONT_TITLE);
         screenLabel.setForeground(UIConstants.WHITE);
         screenLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 14, 0));
 
-        add(textArea, BorderLayout.CENTER);
-        add(screenLabel, BorderLayout.SOUTH);
+        glassPanel.add(textArea, BorderLayout.CENTER);
+        glassPanel.add(screenLabel, BorderLayout.SOUTH);
+
+        add(glassPanel, BorderLayout.CENTER);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        // Farm field gradient overlay
-        GradientPaint gp = new GradientPaint(0, 0, new Color(20, 80, 20), 0, getHeight(), new Color(40, 100, 40));
-        g2.setPaint(gp);
-        g2.fillRect(0, 0, getWidth(), getHeight());
+        // ✅ No solid background - fully transparent to show background image
     }
 }
