@@ -6,23 +6,24 @@ import com.smartfarming.model.RecommendationResult;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class ProfitComparisonPanel extends JPanel {
 
     public ProfitComparisonPanel(AppFrame frame, RecommendationResult result) {
         setLayout(new BorderLayout());
-        setOpaque(false);
+        setBackground(UIConstants.PALE_GREEN);
 
         add(new SidebarPanel(frame, AppFrame.CARD_PROFIT), BorderLayout.WEST);
 
         JPanel main = new JPanel(new BorderLayout());
-        main.setOpaque(false);
+        main.setBackground(UIConstants.PALE_GREEN);
         main.add(new HeaderBannerPanel("Profit Comparison"), BorderLayout.NORTH);
 
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        content.setOpaque(false);
+        content.setBackground(UIConstants.PALE_GREEN);
         content.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
         if (result != null && result.getRecommendedCrops() != null && !result.getRecommendedCrops().isEmpty()) {
@@ -38,8 +39,7 @@ public class ProfitComparisonPanel extends JPanel {
             content.add(tableScroll);
         } else {
             JLabel empty = new JLabel("Run analysis first to view profit comparisons.", SwingConstants.CENTER);
-            empty.setFont(new Font("Segoe UI", Font.BOLD, 18));
-            empty.setForeground(Color.WHITE);
+            empty.setFont(UIConstants.FONT_BODY);
             content.add(empty);
         }
 
@@ -51,12 +51,12 @@ public class ProfitComparisonPanel extends JPanel {
         JPanel chart = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
+                Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Glass background
-                g2.setColor(new Color(255, 255, 255, 200));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+                // Solid white rounded background
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
                 int w = getWidth(), h = getHeight();
                 int bottomPad = 40, leftPad = 60, topPad = 30;
@@ -67,49 +67,63 @@ public class ProfitComparisonPanel extends JPanel {
                         .max().orElse(1);
 
                 int barGroupWidth = (w - leftPad) / crops.size();
-                int barW = Math.max(20, Math.min(60, barGroupWidth / 3));
+                int barW = Math.max(20, Math.min(50, barGroupWidth / 3));
 
-                // Axis Lines
-                g2.setColor(new Color(150, 150, 150, 100));
+                g2.setColor(new Color(220, 230, 220));
                 for (int i = 0; i <= 4; i++) {
                     int y = topPad + chartH - (int) ((i / 4.0) * chartH);
                     g2.drawLine(leftPad, y, w - 20, y);
                     g2.setColor(UIConstants.DARK_TEXT);
                     g2.setFont(UIConstants.FONT_SMALL);
                     g2.drawString((int)((i / 4.0) * maxVal / 1000) + "k", 10, y + 5);
-                    g2.setColor(new Color(150, 150, 150, 100));
+                    g2.setColor(new Color(220, 230, 220));
                 }
 
-                // Bars
                 for (int i = 0; i < crops.size(); i++) {
                     Crop crop = crops.get(i);
                     int groupX = leftPad + i * barGroupWidth + (barGroupWidth - (barW * 2 + 10)) / 2;
 
-                    // Cost Bar (Red/Orange Gradient)
+                    // Cost Bar
                     int costH = (int) ((crop.getCost() / maxVal) * chartH);
-                    GradientPaint costPaint = new GradientPaint(0, topPad + chartH - costH, new Color(220, 80, 80), 0, topPad + chartH, new Color(150, 40, 40));
-                    g2.setPaint(costPaint);
-                    g2.fillRoundRect(groupX, topPad + chartH - costH, barW, costH, 8, 8);
+                    g2.setColor(new Color(210, 100, 100));
+                    g2.fillRoundRect(groupX, topPad + chartH - costH, barW, costH, 6, 6);
 
-                    // Income Bar (Green Gradient)
+                    // Income Bar
                     int incH = (int) ((crop.getExpectedIncome() / maxVal) * chartH);
-                    GradientPaint incPaint = new GradientPaint(0, topPad + chartH - incH, new Color(80, 220, 100), 0, topPad + chartH, new Color(40, 150, 60));
-                    g2.setPaint(incPaint);
-                    g2.fillRoundRect(groupX + barW + 10, topPad + chartH - incH, barW, incH, 8, 8);
+                    g2.setColor(UIConstants.MID_GREEN);
+                    g2.fillRoundRect(groupX + barW + 10, topPad + chartH - incH, barW, incH, 6, 6);
 
-                    // Labels
                     g2.setColor(UIConstants.DARK_TEXT);
                     g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                     FontMetrics fm = g2.getFontMetrics();
                     int textX = groupX + (barW * 2 + 10 - fm.stringWidth(crop.getName())) / 2;
                     g2.drawString(crop.getName(), textX, h - 15);
                 }
-                g2.dispose();
+            }
+
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                int x = e.getX();
+                int w = getWidth();
+                int leftPad = 60;
+                if (x < leftPad || crops.isEmpty()) return null;
+                int barGroupWidth = (w - leftPad) / crops.size();
+                int index = (x - leftPad) / barGroupWidth;
+
+                if (index >= 0 && index < crops.size()) {
+                    Crop c = crops.get(index);
+                    return String.format("<html><div style='margin: 5px;'><b>%s</b><br>Investment: Rs. %,.0f<br>Return: Rs. %,.0f<br><font color='green'><b>Net Profit: Rs. %,.0f</b></font></div></html>",
+                            c.getName(), c.getCost(), c.getExpectedIncome(), c.getProfit());
+                }
+                return null;
             }
         };
+
+        ToolTipManager.sharedInstance().registerComponent(chart);
         chart.setOpaque(false);
-        chart.setPreferredSize(new Dimension(800, 300));
-        chart.setMaximumSize(new Dimension(1000, 350));
+        chart.setPreferredSize(new Dimension(800, 280));
+        chart.setMaximumSize(new Dimension(1000, 300));
+        chart.setBorder(new UIConstants.RoundedBorder(UIConstants.LIGHT_GREEN, 16));
         return chart;
     }
 
@@ -119,9 +133,9 @@ public class ProfitComparisonPanel extends JPanel {
         for (int i = 0; i < crops.size(); i++) {
             Crop c = crops.get(i);
             data[i][0] = c.getName();
-            data[i][1] = "Rs. " + String.format("%,.2f", c.getCost());
-            data[i][2] = "Rs. " + String.format("%,.2f", c.getExpectedIncome());
-            data[i][3] = "Rs. " + String.format("%,.2f", c.getProfit());
+            data[i][1] = "Rs. " + String.format("%,.0f", c.getCost());
+            data[i][2] = "Rs. " + String.format("%,.0f", c.getExpectedIncome());
+            data[i][3] = "Rs. " + String.format("%,.0f", c.getProfit());
         }
 
         JTable table = new JTable(new DefaultTableModel(data, cols) {
@@ -129,13 +143,13 @@ public class ProfitComparisonPanel extends JPanel {
         });
 
         table.setRowHeight(40);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        table.setOpaque(false);
+        table.setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
 
         JTableHeader header = table.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        header.setBackground(new Color(20, 70, 30, 220));
+        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setBackground(UIConstants.TABLE_HEADER_BG);
         header.setForeground(Color.WHITE);
         header.setPreferredSize(new Dimension(0, 45));
 
@@ -144,17 +158,21 @@ public class ProfitComparisonPanel extends JPanel {
             public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(t, val, sel, focus, row, col);
                 setHorizontalAlignment(SwingConstants.CENTER);
-                if (!sel) {
-                    c.setBackground(row % 2 == 0 ? new Color(255, 255, 255, 200) : new Color(240, 250, 240, 200));
+                c.setBackground(row % 2 == 0 ? UIConstants.WHITE : UIConstants.TABLE_ROW_ALT);
+
+                // Make Net Profit column text green
+                if (col == 3) {
+                    c.setForeground(UIConstants.MID_GREEN);
+                } else {
+                    c.setForeground(UIConstants.DARK_TEXT);
                 }
                 return c;
             }
         });
 
         JScrollPane sp = new JScrollPane(table);
-        sp.setOpaque(false);
-        sp.getViewport().setOpaque(false);
-        sp.setBorder(BorderFactory.createLineBorder(new Color(255,255,255,100), 1, true));
+        sp.getViewport().setBackground(Color.WHITE);
+        sp.setBorder(new UIConstants.RoundedBorder(UIConstants.LIGHT_GREEN, 16));
         return sp;
     }
 }

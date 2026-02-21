@@ -7,7 +7,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * Left sidebar navigation used by all inner result screens.
- * Glassmorphism style - semi-transparent frosted glass effect.
+ * Styled with a clean, flat design to match the rest of the application.
  */
 public class SidebarPanel extends JPanel {
 
@@ -21,41 +21,45 @@ public class SidebarPanel extends JPanel {
 
     public SidebarPanel(AppFrame frame, String activeCard) {
         setPreferredSize(new Dimension(200, 0));
-        setOpaque(false); // ✅ transparent so background image shows through
+        setBackground(UIConstants.SIDEBAR_BG);
         setLayout(new BorderLayout());
 
-        // ✅ Logo + brand area - glassmorphism
-        JPanel logoArea = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Frosted glass white tint
-                g2.setColor(new Color(255, 255, 255, 60));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                // Bottom separator line
-                g2.setColor(new Color(255, 255, 255, 80));
-                g2.setStroke(new BasicStroke(1f));
-                g2.drawLine(10, getHeight() - 1, getWidth() - 10, getHeight() - 1);
-                g2.dispose();
-            }
-        };
-        logoArea.setOpaque(false);
+        // Logo + brand area (Solid White Background)
+        JPanel logoArea = new JPanel();
+        logoArea.setBackground(UIConstants.WHITE);
         logoArea.setLayout(new BoxLayout(logoArea, BoxLayout.Y_AXIS));
         logoArea.setBorder(BorderFactory.createEmptyBorder(18, 0, 18, 0));
 
-        JLabel logo = new JLabel("🌿", SwingConstants.CENTER);
-        logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+        // Fixed JLabel Initialization
+        JLabel logo = new JLabel("", SwingConstants.CENTER);
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        try {
+            // Loads the image directly from your resources folder
+            java.net.URL imgUrl = getClass().getResource("/edited logo.png");
+            if (imgUrl != null) {
+                ImageIcon icon = new ImageIcon(imgUrl);
+                // Scales the image to 75x75 pixels so it fits perfectly in the sidebar
+                Image scaledImg = icon.getImage().getScaledInstance(75, 75, Image.SCALE_SMOOTH);
+                logo.setIcon(new ImageIcon(scaledImg));
+            } else {
+                // Fallback to emoji if the image file isn't found
+                logo.setText("🌿");
+                logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+            }
+        } catch (Exception e) {
+            logo.setText("🌿");
+            e.printStackTrace();
+        }
 
         JLabel brand1 = new JLabel("Smart Farming", SwingConstants.CENTER);
         brand1.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        brand1.setForeground(Color.WHITE);
+        brand1.setForeground(UIConstants.MID_GREEN);
         brand1.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel brand2 = new JLabel("Crop Assistant", SwingConstants.CENTER);
         brand2.setFont(UIConstants.FONT_SMALL);
-        brand2.setForeground(new Color(220, 240, 220));
+        brand2.setForeground(UIConstants.DARK_TEXT);
         brand2.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         logoArea.add(logo);
@@ -63,18 +67,9 @@ public class SidebarPanel extends JPanel {
         logoArea.add(brand1);
         logoArea.add(brand2);
 
-        // ✅ Nav buttons panel
-        JPanel navPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(0, 40, 0, 80));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                g2.dispose();
-            }
-        };
-        navPanel.setOpaque(false);
+        // Nav buttons panel
+        JPanel navPanel = new JPanel();
+        navPanel.setBackground(UIConstants.SIDEBAR_BG);
         navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
         navPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
@@ -86,32 +81,15 @@ public class SidebarPanel extends JPanel {
             navPanel.add(buildNavItem(frame, icon, label, card, active));
         }
 
-        // ✅ Back button area
+        // Back button
         JButton backBtn = UIConstants.makeButton("Back <");
         backBtn.setPreferredSize(new Dimension(150, 38));
         backBtn.setMaximumSize(new Dimension(170, 38));
         backBtn.addActionListener(e -> frame.showCard(AppFrame.CARD_INPUT));
 
-        JPanel backWrap = new JPanel(new FlowLayout(FlowLayout.CENTER)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Top border line
-                g2.setColor(new Color(255, 255, 255, 80));
-                g2.setStroke(new BasicStroke(1f));
-                g2.drawLine(10, 0, getWidth() - 10, 0);
-                // Subtle glass tint
-                g2.setColor(new Color(255, 255, 255, 30));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-                g2.dispose();
-            }
-        };
+        JPanel backWrap = new JPanel(new FlowLayout(FlowLayout.CENTER));
         backWrap.setOpaque(false);
         backWrap.add(backBtn);
-
-        // Right border glass line for the whole sidebar
-        setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(255, 255, 255, 60)));
 
         add(logoArea, BorderLayout.NORTH);
         add(navPanel, BorderLayout.CENTER);
@@ -120,37 +98,23 @@ public class SidebarPanel extends JPanel {
 
     private JPanel buildNavItem(AppFrame frame, String icon, String label, String card, boolean active) {
         JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            @Override protected void paintComponent(Graphics g) {
                 if (active) {
-                    // ✅ Active - bright frosted glass with green tint + left accent bar
-                    g2.setColor(new Color(255, 255, 255, 60));
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setColor(UIConstants.MID_GREEN);
                     g2.fillRect(0, 0, getWidth(), getHeight());
-                    g2.setColor(new Color(80, 200, 80, 120));
-                    g2.fillRect(0, 0, getWidth(), getHeight());
-                    // Left accent bar
-                    g2.setColor(new Color(150, 255, 150, 220));
-                    g2.fillRect(0, 0, 4, getHeight());
                 } else {
-                    // Subtle glass
-                    g2.setColor(new Color(255, 255, 255, 10));
-                    g2.fillRect(0, 0, getWidth(), getHeight());
+                    super.paintComponent(g);
                 }
-                // Bottom divider line
-                g2.setColor(new Color(255, 255, 255, 30));
-                g2.drawLine(10, getHeight() - 1, getWidth() - 10, getHeight() - 1);
-                g2.dispose();
             }
         };
-        item.setOpaque(false);
+        item.setBackground(UIConstants.SIDEBAR_BG);
         item.setMaximumSize(new Dimension(200, 56));
         item.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JLabel iconLbl = new JLabel(icon);
         iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        iconLbl.setForeground(Color.WHITE);
+        iconLbl.setForeground(active ? UIConstants.WHITE : UIConstants.DARK_TEXT);
 
         // Multi-line label
         String[] parts = label.split("\n");
@@ -160,7 +124,7 @@ public class SidebarPanel extends JPanel {
         for (String part : parts) {
             JLabel l = new JLabel(part);
             l.setFont(UIConstants.FONT_SMALL);
-            l.setForeground(active ? Color.WHITE : new Color(220, 240, 220));
+            l.setForeground(active ? UIConstants.WHITE : UIConstants.DARK_TEXT);
             textBox.add(l);
         }
 
@@ -168,31 +132,15 @@ public class SidebarPanel extends JPanel {
         item.add(textBox);
 
         item.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) { frame.showCard(card); }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!active) item.repaint();
+            @Override public void mouseClicked(MouseEvent e) { frame.showCard(card); }
+            @Override public void mouseEntered(MouseEvent e) {
+                if (!active) item.setBackground(UIConstants.LIGHT_GREEN);
             }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!active) item.repaint();
+            @Override public void mouseExited(MouseEvent e) {
+                if (!active) item.setBackground(UIConstants.SIDEBAR_BG);
             }
         });
 
         return item;
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        // ✅ Main sidebar glass layer - dark green tint with transparency
-        g2.setColor(new Color(10, 60, 10, 160));
-        g2.fillRect(0, 0, getWidth(), getHeight());
-        g2.dispose();
     }
 }
