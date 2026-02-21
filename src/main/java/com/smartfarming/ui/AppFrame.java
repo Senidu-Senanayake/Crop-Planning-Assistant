@@ -29,7 +29,7 @@ public class AppFrame extends JFrame {
     private FinalRecommendationPanel finalPanel;
 
     public AppFrame() {
-        setTitle("SCA Home");
+        setTitle("SCA");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1280, 940);
         setLocationRelativeTo(null);
