@@ -76,7 +76,7 @@ public class ProfitComparisonPanel extends JPanel {
                     g2.drawLine(leftPad, y, w - 20, y);
                     g2.setColor(UIConstants.DARK_TEXT);
                     g2.setFont(UIConstants.FONT_SMALL);
-                    g2.drawString(String.valueOf((int)((i / 4.0) * maxVal / 1000)) + "k", 10, y + 5);
+                    g2.drawString((int)((i / 4.0) * maxVal / 1000) + "k", 10, y + 5);
                     g2.setColor(new Color(150, 150, 150, 100));
                 }
 
