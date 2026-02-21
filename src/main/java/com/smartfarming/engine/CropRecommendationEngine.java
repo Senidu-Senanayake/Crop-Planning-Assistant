@@ -12,19 +12,24 @@ import java.util.List;
 public class CropRecommendationEngine {
 
     private final DecisionTree decisionTree = new DecisionTree();
-    private final MarketGraph marketGraph = new MarketGraph();
+    private final MarketGraph  marketGraph  = new MarketGraph();
 
     public RecommendationResult analyze(Farm farm) {
-        // 1. Traverse decision tree
-        TreeNode leaf = decisionTree.recommend(farm);
 
+        // 1. Traverse decision tree (Soil → Rainfall → Season)
+        TreeNode leaf = decisionTree.recommend(farm);
         if (leaf == null) {
-            throw new IllegalArgumentException("No recommendation found for the given farm conditions.");
+            throw new IllegalArgumentException(
+                    "No recommendation for: " + farm.getSoilType() +
+                            " / " + farm.getRainfall() + " / " + farm.getSeason());
         }
 
-        // 2. Get optimal markets via Dijkstra
-        List<Market> markets = marketGraph.findOptimalMarkets();
-        Market optimal = markets.stream().filter(Market::isOptimal).findFirst().orElse(markets.get(0));
+        // 2. Run Dijkstra from the farm's district to all wholesale markets
+        List<Market> markets = marketGraph.findMarketsFromDistrict(farm.getLocation());
+        Market optimal = markets.stream()
+                .filter(Market::isOptimal)
+                .findFirst()
+                .orElse(markets.isEmpty() ? null : markets.get(0));
 
         return new RecommendationResult(
                 leaf.getCrops(),

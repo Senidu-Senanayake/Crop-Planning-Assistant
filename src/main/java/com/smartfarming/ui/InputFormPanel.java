@@ -1,40 +1,39 @@
 package com.smartfarming.ui;
 
+import com.smartfarming.datastructures.MarketGraph;
 import com.smartfarming.model.Farm;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Objects;
 import java.io.File;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * InputFormPanel: UI panel for Smart Farming Crop Planning Assistant
- * Collects farm details: soil type, rainfall, season, location
+ * InputFormPanel – collects Soil Type, Rainfall, Season, and District.
+ * The district dropdown is populated from MarketGraph.getAllDistricts() so it
+ * always stays in sync with the graph nodes.
  */
 public class InputFormPanel extends JPanel {
 
-    // UI components
     private JComboBox<String> soilCombo;
     private JComboBox<String> rainfallCombo;
     private JRadioButton yalaBtn;
     private JRadioButton mahaBtn;
-    private JComboBox<String> locationField;
+    private JComboBox<String> districtCombo;
 
-    // Background image
     private Image backgroundImage;
     private boolean imageLoaded = false;
 
     public InputFormPanel(AppFrame frame) {
-        // Load background image with better error handling
         loadBackgroundImage();
-
         setLayout(new BorderLayout());
 
-        /* ================= TOP HEADER ================= */
+        /* ── TOP HEADER ────────────────────────────────────────── */
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(UIConstants.DARK_GREEN);
+        topPanel.setPreferredSize(new Dimension(0, 100));
 
-        // Left section with SCA Home
         JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         leftHeader.setOpaque(false);
         JLabel homeLabel = new JLabel("SCA Home");
@@ -42,280 +41,221 @@ public class InputFormPanel extends JPanel {
         homeLabel.setForeground(Color.WHITE);
         leftHeader.add(homeLabel);
         topPanel.add(leftHeader, BorderLayout.WEST);
-
-        // Create center header using helper method
-        JPanel centerHeader = createCenterHeader();
-        topPanel.add(centerHeader, BorderLayout.CENTER);
-
-        // Right section (empty for balance)
-        JPanel rightHeader = new JPanel();
-        rightHeader.setOpaque(false);
-        rightHeader.setPreferredSize(new Dimension(100, 70));
-        topPanel.add(rightHeader, BorderLayout.EAST);
-
-        topPanel.setPreferredSize(new Dimension(0, 100));
+        topPanel.add(createCenterHeader(), BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        /* ================= FORM PANEL ================= */
-        // Initialize components
-        soilCombo = new JComboBox<>(new String[]{"Select", "Loamy", "Clay", "Sandy"});
-        rainfallCombo = new JComboBox<>(new String[]{"Select", "Low", "Medium", "High"});
-        yalaBtn = new JRadioButton("Yala");
-        mahaBtn = new JRadioButton("Maha");
-        locationField = new JComboBox<>(new String[]{
-                "Select", "Colombo", "Kandy", "Galle", "Jaffna",
-                "Anuradhapura", "Batticaloa", "Kurunegala", "Matara"
-        });
+        /* ── FORM ──────────────────────────────────────────────── */
+        // Build district list: "Select" + all 25 districts
+        List<String> districtList = MarketGraph.getAllDistricts();
+        String[] districtItems = new String[districtList.size() + 1];
+        districtItems[0] = "Select";
+        for (int i = 0; i < districtList.size(); i++) districtItems[i + 1] = districtList.get(i);
 
-        // ✅ Frosted glass effect - semi-transparent panel so background image shows through
+        soilCombo     = styledCombo("Select", "Loamy", "Clay", "Sandy");
+        rainfallCombo = styledCombo("Select", "Low", "Medium", "High");
+        districtCombo = styledCombo(districtItems);
+        yalaBtn = new JRadioButton("Yala ●");
+        mahaBtn = new JRadioButton("Maha ●");
+        yalaBtn.setSelected(true);
+
+        // Frosted-glass form container
         JPanel formContainer = new JPanel(new GridBagLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(255, 255, 255, 180)); // white with transparency
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20); // rounded corners
+                g2d.setColor(new Color(255, 255, 255, 185));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 24, 24);
                 g2d.dispose();
             }
         };
-        formContainer.setOpaque(false); // ✅ transparent so background shows through
-        formContainer.setBorder(BorderFactory.createEmptyBorder(30, 60, 30, 60));
+        formContainer.setOpaque(false);
+        formContainer.setBorder(BorderFactory.createEmptyBorder(28, 60, 28, 60));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.anchor = GridBagConstraints.WEST;
+        GridBagConstraints lc = new GridBagConstraints();
+        lc.anchor = GridBagConstraints.EAST;
+        lc.insets = new Insets(12, 10, 12, 20);
 
-        // Title: "Farm Input Details"
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        JLabel formTitle = new JLabel("Farm Input Details");
-        formTitle.setFont(UIConstants.FONT_TITLE);
-        formTitle.setForeground(UIConstants.DARK_GREEN);
-        formContainer.add(formTitle, gbc);
+        GridBagConstraints fc = new GridBagConstraints();
+        fc.fill = GridBagConstraints.HORIZONTAL;
+        fc.weightx = 1.0;
+        fc.insets = new Insets(12, 0, 12, 10);
 
-        // Reset gridwidth
-        gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        // Title
+        GridBagConstraints tc = new GridBagConstraints();
+        tc.gridx = 0; tc.gridy = 0; tc.gridwidth = 2;
+        tc.insets = new Insets(0, 0, 18, 0);
+        JLabel title = new JLabel("Farm Input Details");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setForeground(UIConstants.DARK_GREEN);
+        formContainer.add(title, tc);
 
         // Soil Type
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        JLabel soilLabel = new JLabel("Soil Type :");
-        soilLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        soilLabel.setForeground(Color.BLACK);
-        formContainer.add(soilLabel, gbc);
+        addRow(formContainer, "Soil Type :", soilCombo, lc, fc, 1);
 
-        gbc.gridx = 1;
-        soilCombo.setFont(new Font("Arial", Font.PLAIN, 14));
-        soilCombo.setPreferredSize(new Dimension(200, 30));
-        soilCombo.setBackground(Color.WHITE);
-        formContainer.add(soilCombo, gbc);
+        // Rainfall
+        addRow(formContainer, "Rainfall Level :", rainfallCombo, lc, fc, 2);
 
-        // Rainfall Level
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        JLabel rainfallLabel = new JLabel("Rainfall Level :");
-        rainfallLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        rainfallLabel.setForeground(Color.BLACK);
-        formContainer.add(rainfallLabel, gbc);
-
-        gbc.gridx = 1;
-        rainfallCombo.setFont(new Font("Arial", Font.PLAIN, 14));
-        rainfallCombo.setPreferredSize(new Dimension(200, 30));
-        rainfallCombo.setBackground(Color.WHITE);
-        formContainer.add(rainfallCombo, gbc);
-
-        // Season
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        JLabel seasonLabel = new JLabel("Season :");
-        seasonLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        seasonLabel.setForeground(Color.BLACK);
-        formContainer.add(seasonLabel, gbc);
-
-        gbc.gridx = 1;
-        JPanel seasonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
-        seasonPanel.setOpaque(false);
-
-        yalaBtn.setSelected(true);
-
-        // Style radio buttons
-        yalaBtn.setFont(new Font("Arial", Font.PLAIN, 14));
-        mahaBtn.setFont(new Font("Arial", Font.PLAIN, 14));
-        yalaBtn.setOpaque(false);
-        mahaBtn.setOpaque(false);
-        yalaBtn.setBackground(new Color(255, 255, 255, 0));
-        mahaBtn.setBackground(new Color(255, 255, 255, 0));
-
+        // Season (radio)
         ButtonGroup bg = new ButtonGroup();
-        bg.add(yalaBtn);
-        bg.add(mahaBtn);
-
+        bg.add(yalaBtn); bg.add(mahaBtn);
+        styleRadio(yalaBtn); styleRadio(mahaBtn);
+        JPanel seasonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
+        seasonPanel.setOpaque(false);
         seasonPanel.add(yalaBtn);
         seasonPanel.add(mahaBtn);
-        formContainer.add(seasonPanel, gbc);
+        addRow(formContainer, "Season :", seasonPanel, lc, fc, 3);
 
-        // Farm Location
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        JLabel locationLabel = new JLabel("Farm Location :");
-        locationLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        locationLabel.setForeground(Color.BLACK);
-        formContainer.add(locationLabel, gbc);
+        // District (farm location → graph source node)
+        addRow(formContainer, "Farm District :", districtCombo, lc, fc, 4);
 
-        gbc.gridx = 1;
-        locationField.setFont(new Font("Arial", Font.PLAIN, 14));
-        locationField.setPreferredSize(new Dimension(200, 30));
-        locationField.setBackground(Color.WHITE);
-        formContainer.add(locationField, gbc);
+        // Hint label under district
+        GridBagConstraints hc = new GridBagConstraints();
+        hc.gridx = 1; hc.gridy = 5; hc.anchor = GridBagConstraints.WEST;
+        hc.insets = new Insets(-8, 0, 6, 0);
+        JLabel hint = new JLabel("Used to find nearest wholesale market via shortest path");
+        hint.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        hint.setForeground(new Color(80, 120, 80));
+        formContainer.add(hint, hc);
 
         // Analyze button
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(30, 10, 10, 10);
-
-        JButton analyzeBtn = new JButton("Analyze");
-        analyzeBtn.setFont(new Font("Arial", Font.BOLD, 18));
-        analyzeBtn.setForeground(Color.WHITE);
-        analyzeBtn.setBackground(new Color(0, 120, 0));
-        analyzeBtn.setPreferredSize(new Dimension(250, 40));
-        analyzeBtn.setFocusPainted(false);
-        analyzeBtn.setBorderPainted(false);
-
-        // Add hover effect
-        analyzeBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                analyzeBtn.setBackground(new Color(0, 100, 0));
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                analyzeBtn.setBackground(new Color(0, 120, 0));
-            }
-        });
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(analyzeBtn);
-        formContainer.add(buttonPanel, gbc);
-
-        // Action listener
+        GridBagConstraints bc = new GridBagConstraints();
+        bc.gridx = 0; bc.gridy = 6; bc.gridwidth = 2;
+        bc.insets = new Insets(22, 0, 0, 0);
+        JButton analyzeBtn = buildAnalyzeButton();
         analyzeBtn.addActionListener(e -> {
-            String soil = Objects.requireNonNullElse((String) soilCombo.getSelectedItem(), "Select");
-            String rain = Objects.requireNonNullElse((String) rainfallCombo.getSelectedItem(), "Select");
+            String soil   = getSelected(soilCombo);
+            String rain   = getSelected(rainfallCombo);
             String season = yalaBtn.isSelected() ? "Yala" : "Maha";
-            String loc = Objects.requireNonNullElse((String) locationField.getSelectedItem(), "Select");
+            String dist   = getSelected(districtCombo);
 
-            if ("Select".equals(soil)) soil = "Not Specified";
-            if ("Select".equals(rain)) rain = "Not Specified";
-            if ("Select".equals(loc)) loc = "Unknown";
-
-            frame.runAnalysis(new Farm(soil, rain, season, loc));
+            // Validate
+            if ("Not Specified".equals(soil) || "Not Specified".equals(rain) || "Unknown".equals(dist)) {
+                JOptionPane.showMessageDialog(frame,
+                        "Please select Soil Type, Rainfall Level and Farm District before analyzing.",
+                        "Incomplete Input", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            frame.runAnalysis(new Farm(soil, rain, season, dist));
         });
+        formContainer.add(analyzeBtn, bc);
 
-        // ✅ Center panel transparent so background image shows through
         JPanel centerPanel = new JPanel(new GridBagLayout());
         centerPanel.setOpaque(false);
         centerPanel.add(formContainer);
         add(centerPanel, BorderLayout.CENTER);
     }
 
-    /**
-     * Creates the centered header panel
-     */
+    /* ── Helpers ──────────────────────────────────────────────────────── */
+    private JComboBox<String> styledCombo(String... items) {
+        JComboBox<String> cb = new JComboBox<>(items);
+        cb.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cb.setPreferredSize(new Dimension(280, 38));
+        cb.setBackground(Color.WHITE);
+        return cb;
+    }
+
+    private void styleRadio(JRadioButton btn) {
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btn.setOpaque(false);
+        btn.setForeground(UIConstants.DARK_GREEN);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                new UIConstants.RoundedBorder(UIConstants.MID_GREEN, 16),
+                BorderFactory.createEmptyBorder(4, 12, 4, 12)));
+    }
+
+    private void addRow(JPanel form, String labelText, JComponent field,
+                        GridBagConstraints lc, GridBagConstraints fc, int row) {
+        lc.gridx = 0; lc.gridy = row;
+        JLabel lbl = new JLabel(labelText);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        lbl.setForeground(Color.DARK_GRAY);
+        form.add(lbl, lc);
+        fc.gridx = 1; fc.gridy = row;
+        form.add(field, fc);
+    }
+
+    private String getSelected(JComboBox<String> combo) {
+        String val = Objects.requireNonNullElse((String) combo.getSelectedItem(), "Select");
+        return "Select".equals(val) ? "Not Specified" : val;
+    }
+
+    private JButton buildAnalyzeButton() {
+        JButton btn = new JButton("Analyze") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, UIConstants.MID_GREEN, 0, getHeight(), UIConstants.DARK_GREEN);
+                g2.setPaint(gp);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 30, 30);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+        btn.setPreferredSize(new Dimension(250, 48));
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) { btn.setBackground(UIConstants.DARK_GREEN); btn.repaint(); }
+            public void mouseExited(java.awt.event.MouseEvent e)  { btn.setBackground(UIConstants.MID_GREEN);  btn.repaint(); }
+        });
+        return btn;
+    }
+
     private JPanel createCenterHeader() {
-        JPanel centerHeader = new JPanel();
-        centerHeader.setOpaque(false);
-        centerHeader.setLayout(new BoxLayout(centerHeader, BoxLayout.Y_AXIS));
-
-        JLabel mainTitle = new JLabel("Smart Farming");
-        mainTitle.setFont(new Font("Arial", Font.BOLD, 28));
-        mainTitle.setForeground(Color.WHITE);
-        mainTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        JLabel subTitle = new JLabel("Crop Assistant");
-        subTitle.setFont(new Font("Arial", Font.PLAIN, 24));
-        subTitle.setForeground(Color.WHITE);
-        subTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        centerHeader.add(mainTitle);
-        centerHeader.add(subTitle);
-
-        return centerHeader;
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        JLabel t1 = new JLabel("Smart Farming");
+        t1.setFont(new Font("Arial", Font.BOLD, 28));
+        t1.setForeground(Color.WHITE);
+        t1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel t2 = new JLabel("Crop Assistant");
+        t2.setFont(new Font("Arial", Font.PLAIN, 22));
+        t2.setForeground(Color.WHITE);
+        t2.setAlignmentX(Component.CENTER_ALIGNMENT);
+        p.add(Box.createVerticalStrut(14));
+        p.add(t1);
+        p.add(t2);
+        return p;
     }
 
     private void loadBackgroundImage() {
         try {
-            String[] possiblePaths = {
-                    "/farm.jpeg"
-            };
-
-            for (String path : possiblePaths) {
-                java.net.URL imgURL = getClass().getResource(path);
-                if (imgURL != null) {
-                    backgroundImage = javax.imageio.ImageIO.read(imgURL);
-                    imageLoaded = true;
-                    System.out.println("Background image loaded from: " + path);
-                    return;
-                }
+            java.net.URL url = getClass().getResource("/farm.jpeg");
+            if (url != null) {
+                backgroundImage = javax.imageio.ImageIO.read(url);
+                imageLoaded = true; return;
             }
-
-            // Fallback: try file system
-            String userDir = System.getProperty("user.dir");
-            String[] filePaths = {
-                    userDir + "/src/main/resources/farm.jpeg",
-                    userDir + "/resources/farm.jpeg",
-                    userDir + "/farm.jpeg"
-            };
-
-            for (String filePath : filePaths) {
-                File imageFile = new File(filePath);
-                if (imageFile.exists()) {
-                    backgroundImage = Toolkit.getDefaultToolkit().getImage(imageFile.getAbsolutePath());
-                    imageLoaded = true;
-                    System.out.println("Background image loaded from: " + filePath);
-                    return;
-                }
+            String base = System.getProperty("user.dir");
+            for (String p : new String[]{"/src/main/resources/farm.jpeg", "/resources/farm.jpeg", "/farm.jpeg"}) {
+                File f = new File(base + p);
+                if (f.exists()) { backgroundImage = Toolkit.getDefaultToolkit().getImage(f.getAbsolutePath()); imageLoaded = true; return; }
             }
-
-        } catch (Exception e) {
-            System.out.println("Could not load background image: " + e.getMessage());
-        }
-
-        imageLoaded = false;
+        } catch (Exception ignored) {}
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
-        Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         if (imageLoaded && backgroundImage != null) {
-            // ✅ Draw background image stretched to fill entire panel
-            g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
-
-            // Subtle dark overlay for better form readability
-            g2d.setColor(new Color(0, 0, 0, 40));
-            g2d.fillRect(0, 0, getWidth(), getHeight());
+            g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            g2.setColor(new Color(0, 0, 0, 40));
+            g2.fillRect(0, 0, getWidth(), getHeight());
         } else {
-            // Gradient fallback if image not found
-            GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(220, 240, 220),
-                    getWidth(), getHeight(), new Color(180, 210, 180)
-            );
-            g2d.setPaint(gradient);
-            g2d.fillRect(0, 0, getWidth(), getHeight());
-
-            g2d.setColor(new Color(200, 230, 200, 50));
-            for (int i = 0; i < 5; i++) {
-                int x = (i * 200) % getWidth();
-                int y = (i * 150) % getHeight();
-                g2d.fillOval(x, y, 100, 100);
-            }
+            GradientPaint gp = new GradientPaint(0, 0, new Color(200, 230, 200), getWidth(), getHeight(), new Color(160, 200, 160));
+            g2.setPaint(gp); g2.fillRect(0, 0, getWidth(), getHeight());
         }
-
-        g2d.dispose();
+        g2.dispose();
     }
 }
