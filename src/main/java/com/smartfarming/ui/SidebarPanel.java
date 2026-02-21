@@ -49,16 +49,15 @@ public class SidebarPanel extends JPanel {
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         try {
-            // UPDATED: Loads "logo.png" directly from your resources folder
-            java.net.URL imgUrl = getClass().getResource("/logo.png");
-            if (imgUrl != null) {
-                ImageIcon icon = new ImageIcon(imgUrl);
-                // Scales image to 75x75 to fit nicely
+            // Using a direct file path to match exactly how farm.jpeg is loaded!
+            ImageIcon icon = new ImageIcon("src/main/resources/logo.png");
+
+            // Check if the image successfully loaded by checking its width
+            if (icon.getIconWidth() > 0) {
                 Image scaledImg = icon.getImage().getScaledInstance(75, 75, Image.SCALE_SMOOTH);
                 logo.setIcon(new ImageIcon(scaledImg));
             } else {
-                // Fallback to emoji if image not found
-                System.err.println("Logo image not found: /logo.png");
+                System.err.println("Logo image not found at src/main/resources/logo.png");
                 logo.setText("🌿");
                 logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
             }
