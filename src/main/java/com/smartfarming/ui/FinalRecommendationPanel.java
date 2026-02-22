@@ -10,17 +10,26 @@ import java.util.List;
 
 public class FinalRecommendationPanel extends JPanel {
 
+    // Added background image state
+    private Image backgroundImage;
+    private boolean imageLoaded = false;
+
     public FinalRecommendationPanel(AppFrame frame, RecommendationResult result) {
+        // Load background image
+        loadBackgroundImage();
+
         setLayout(new BorderLayout());
-        setBackground(UIConstants.PALE_GREEN);
+        setOpaque(false); // Base is transparent for background image visibility
 
         add(new SidebarPanel(frame, AppFrame.CARD_FINAL), BorderLayout.WEST);
 
         JPanel main = new JPanel(new BorderLayout());
-        main.setBackground(UIConstants.PALE_GREEN);
+        main.setOpaque(false);
         main.add(new HeaderBannerPanel("Final Recommendation"), BorderLayout.NORTH);
 
+        // ✅ Solid Opaque Content: Masks the background image in the center area
         JPanel content = new JPanel(new BorderLayout());
+        content.setOpaque(true);
         content.setBackground(UIConstants.PALE_GREEN);
         content.setBorder(BorderFactory.createEmptyBorder(24, 28, 20, 28));
 
@@ -52,13 +61,6 @@ public class FinalRecommendationPanel extends JPanel {
                     new Color(56,142,60), new Color(27,94,32)));
 
             content.add(grid, BorderLayout.CENTER);
-
-            // Path summary strip
-            if (optimal != null && optimal.getShortestPath() != null) {
-                List<String> path = optimal.getShortestPath();
-                JPanel pathStrip = buildPathStrip(path);
-                content.add(pathStrip, BorderLayout.SOUTH);
-            }
 
             // Download button
             JButton dlBtn = UIConstants.makeButton("⬇  Download Report");
@@ -152,5 +154,30 @@ public class FinalRecommendationPanel extends JPanel {
             }
         }
         return strip;
+    }
+
+    // --- Background Image Loader ---
+    private void loadBackgroundImage() {
+        try {
+            ImageIcon icon = new ImageIcon("src/main/resources/farm.jpeg");
+            if (icon.getIconWidth() > 0) {
+                backgroundImage = icon.getImage();
+                imageLoaded = true;
+            }
+        } catch (Exception e) { imageLoaded = false; }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (imageLoaded && backgroundImage != null) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            // Subtle dark overlay
+            g2.setColor(new Color(0, 0, 0, 50));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.dispose();
+        }
     }
 }

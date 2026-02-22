@@ -6,174 +6,210 @@ import com.smartfarming.model.RecommendationResult;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.io.File;
 import java.util.List;
 
 public class ProfitComparisonPanel extends JPanel {
 
+    private Image backgroundImage;
+    private boolean imageLoaded = false;
+
     public ProfitComparisonPanel(AppFrame frame, RecommendationResult result) {
+        loadBackgroundImage();
         setLayout(new BorderLayout());
-        setBackground(UIConstants.PALE_GREEN);
+        setOpaque(false); // Let the background image show through the base
 
         add(new SidebarPanel(frame, AppFrame.CARD_PROFIT), BorderLayout.WEST);
 
         JPanel main = new JPanel(new BorderLayout());
-        main.setBackground(UIConstants.PALE_GREEN);
+        main.setOpaque(false);
         main.add(new HeaderBannerPanel("Profit Comparison"), BorderLayout.NORTH);
 
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        // 🟢 THIS IS THE MAGIC TRICK: Makes the detail UI solid pale green, covering the image!
+        content.setOpaque(true);
         content.setBackground(UIConstants.PALE_GREEN);
         content.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        if (result != null) {
+        if (result != null && result.getRecommendedCrops() != null && !result.getRecommendedCrops().isEmpty()) {
             List<Crop> crops = result.getRecommendedCrops();
 
-            // Chart
             JPanel chart = buildBarChart(crops);
-            chart.setAlignmentX(Component.LEFT_ALIGNMENT);
+            chart.setAlignmentX(Component.CENTER_ALIGNMENT);
             content.add(chart);
-            content.add(Box.createVerticalStrut(16));
+            content.add(Box.createVerticalStrut(20));
 
-            // Table
             JScrollPane tableScroll = buildTable(crops);
-            tableScroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-            tableScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+            tableScroll.setAlignmentX(Component.CENTER_ALIGNMENT);
             content.add(tableScroll);
         } else {
-            content.add(new JLabel("Run analysis first.", SwingConstants.CENTER));
+            JLabel empty = new JLabel("Run analysis first to view profit comparisons.", SwingConstants.CENTER);
+            empty.setFont(UIConstants.FONT_BODY);
+            content.add(empty);
         }
 
-        JScrollPane scroll = new JScrollPane(content);
-        scroll.setBorder(null);
-        scroll.getViewport().setBackground(UIConstants.PALE_GREEN);
-        main.add(scroll, BorderLayout.CENTER);
+        main.add(content, BorderLayout.CENTER);
         add(main, BorderLayout.CENTER);
     }
 
     private JPanel buildBarChart(List<Crop> crops) {
-        JPanel chartWrapper = new JPanel(new BorderLayout()) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(230, 248, 230));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-            }
-        };
-        chartWrapper.setOpaque(false);
-        chartWrapper.setPreferredSize(new Dimension(0, 260));
-        chartWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
-
         JPanel chart = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                setBackground(new Color(230, 248, 230));
+
+                // Solid white rounded background for chart
+                g2.setColor(Color.WHITE);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
 
                 int w = getWidth(), h = getHeight();
-                int bottomPad = 40, leftPad = 60, topPad = 20;
+                int bottomPad = 40, leftPad = 60, topPad = 30;
                 int chartH = h - bottomPad - topPad;
 
-                // Find max value for scaling
                 double maxVal = crops.stream()
                         .mapToDouble(c -> Math.max(c.getCost(), c.getExpectedIncome()))
                         .max().orElse(1);
 
                 int barGroupWidth = (w - leftPad) / crops.size();
-                int barW = Math.min(50, barGroupWidth / 3);
+                int barW = Math.max(20, Math.min(50, barGroupWidth / 3));
 
-                // Y axis labels
-                g2.setColor(UIConstants.DARK_TEXT);
-                g2.setFont(UIConstants.FONT_SMALL);
-                int[] yLabels = {0, 12, 21, 33, 94};
-                for (int lv : yLabels) {
-                    int y = topPad + chartH - (int) ((lv / 100.0) * chartH);
-                    g2.drawString(String.valueOf(lv), 8, y + 4);
-                    g2.setColor(new Color(180, 220, 180));
-                    g2.drawLine(leftPad, y, w - 10, y);
+                g2.setColor(new Color(220, 230, 220));
+                for (int i = 0; i <= 4; i++) {
+                    int y = topPad + chartH - (int) ((i / 4.0) * chartH);
+                    g2.drawLine(leftPad, y, w - 20, y);
                     g2.setColor(UIConstants.DARK_TEXT);
+                    g2.setFont(UIConstants.FONT_SMALL);
+                    g2.drawString((int)((i / 4.0) * maxVal / 1000) + "k", 10, y + 5);
+                    g2.setColor(new Color(220, 230, 220));
                 }
 
-                // Bars
                 for (int i = 0; i < crops.size(); i++) {
                     Crop crop = crops.get(i);
-                    int groupX = leftPad + i * barGroupWidth + barGroupWidth / 6;
+                    int groupX = leftPad + i * barGroupWidth + (barGroupWidth - (barW * 2 + 10)) / 2;
 
-                    // Cost bar (dark green)
-                    int costH = (int) ((crop.getCost() / maxVal) * chartH * 0.9);
-                    int costVal = (int) (crop.getCost() / 1000);
-                    g2.setColor(UIConstants.DARK_GREEN);
+                    // Cost Bar
+                    int costH = (int) ((crop.getCost() / maxVal) * chartH);
+                    g2.setColor(new Color(210, 100, 100));
                     g2.fillRoundRect(groupX, topPad + chartH - costH, barW, costH, 6, 6);
-                    g2.setColor(UIConstants.DARK_TEXT);
-                    g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
-                    g2.drawString(String.valueOf(costVal), groupX + barW / 2 - 6, topPad + chartH - costH - 4);
 
-                    // Income bar (light green)
-                    int incH = (int) ((crop.getExpectedIncome() / maxVal) * chartH * 0.9);
-                    int incVal = (int) (crop.getExpectedIncome() / 1000);
-                    g2.setColor(UIConstants.ACCENT_GREEN);
-                    g2.fillRoundRect(groupX + barW + 8, topPad + chartH - incH, barW, incH, 6, 6);
-                    g2.setColor(UIConstants.DARK_TEXT);
-                    g2.drawString(String.valueOf(incVal), groupX + barW + 8 + barW / 2 - 6, topPad + chartH - incH - 4);
+                    // Income Bar
+                    int incH = (int) ((crop.getExpectedIncome() / maxVal) * chartH);
+                    g2.setColor(UIConstants.MID_GREEN);
+                    g2.fillRoundRect(groupX + barW + 10, topPad + chartH - incH, barW, incH, 6, 6);
 
-                    // X label
+                    g2.setColor(UIConstants.DARK_TEXT);
                     g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-                    g2.setColor(UIConstants.DARK_GREEN);
-                    g2.drawString(crop.getName(), groupX, h - 10);
+                    FontMetrics fm = g2.getFontMetrics();
+                    int textX = groupX + (barW * 2 + 10 - fm.stringWidth(crop.getName())) / 2;
+                    g2.drawString(crop.getName(), textX, h - 15);
                 }
+            }
 
-                // Axis
-                g2.setColor(UIConstants.MID_GREEN);
-                g2.setStroke(new BasicStroke(1.5f));
-                g2.drawLine(leftPad, topPad, leftPad, topPad + chartH);
-                g2.drawLine(leftPad, topPad + chartH, w - 10, topPad + chartH);
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                int x = e.getX();
+                int w = getWidth();
+                int leftPad = 60;
+                if (x < leftPad || crops.isEmpty()) return null;
+                int barGroupWidth = (w - leftPad) / crops.size();
+                int index = (x - leftPad) / barGroupWidth;
+
+                if (index >= 0 && index < crops.size()) {
+                    Crop c = crops.get(index);
+                    return String.format("<html><div style='margin: 5px;'><b>%s</b><br>Investment: Rs. %,.0f<br>Return: Rs. %,.0f<br><font color='green'><b>Net Profit: Rs. %,.0f</b></font></div></html>",
+                            c.getName(), c.getCost(), c.getExpectedIncome(), c.getProfit());
+                }
+                return null;
             }
         };
+
+        ToolTipManager.sharedInstance().registerComponent(chart);
         chart.setOpaque(false);
-        chartWrapper.add(chart, BorderLayout.CENTER);
-        return chartWrapper;
+        chart.setPreferredSize(new Dimension(800, 280));
+        chart.setMaximumSize(new Dimension(1000, 300));
+        chart.setBorder(new UIConstants.RoundedBorder(UIConstants.LIGHT_GREEN, 16));
+        return chart;
     }
 
     private JScrollPane buildTable(List<Crop> crops) {
-        String[] cols = {"Crop", "Cost", "Expected Income", "Profit"};
+        String[] cols = {"Crop", "Investment", "Expected Return", "Net Profit"};
         Object[][] data = new Object[crops.size()][4];
         for (int i = 0; i < crops.size(); i++) {
             Crop c = crops.get(i);
             data[i][0] = c.getName();
-            data[i][1] = "Rs. " + (int) c.getCost();
-            data[i][2] = "Rs. " + (int) c.getExpectedIncome();
-            data[i][3] = "Rs. " + (int) c.getProfit();
+            data[i][1] = "Rs. " + String.format("%,.0f", c.getCost());
+            data[i][2] = "Rs. " + String.format("%,.0f", c.getExpectedIncome());
+            data[i][3] = "Rs. " + String.format("%,.0f", c.getProfit());
         }
 
-        DefaultTableModel model = new DefaultTableModel(data, cols) {
+        JTable table = new JTable(new DefaultTableModel(data, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        JTable table = new JTable(model);
-        table.setRowHeight(44);
-        table.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        });
+
+        table.setRowHeight(40);
+        table.setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 2));
+        table.setIntercellSpacing(new Dimension(0, 0));
 
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 14));
         header.setBackground(UIConstants.TABLE_HEADER_BG);
-        header.setForeground(UIConstants.WHITE);
-        header.setPreferredSize(new Dimension(0, 44));
+        header.setForeground(Color.WHITE);
+        header.setPreferredSize(new Dimension(0, 45));
 
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable t, Object val,
-                    boolean sel, boolean focus, int row, int col) {
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
                 Component c = super.getTableCellRendererComponent(t, val, sel, focus, row, col);
+                setHorizontalAlignment(SwingConstants.CENTER);
                 c.setBackground(row % 2 == 0 ? UIConstants.WHITE : UIConstants.TABLE_ROW_ALT);
-                ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
+
+                // Make Net Profit column text green
+                if (col == 3) {
+                    c.setForeground(UIConstants.MID_GREEN);
+                } else {
+                    c.setForeground(UIConstants.DARK_TEXT);
+                }
                 return c;
             }
         });
 
         JScrollPane sp = new JScrollPane(table);
-        sp.setBorder(new UIConstants.RoundedBorder(UIConstants.LIGHT_GREEN, 14));
+        sp.getViewport().setBackground(Color.WHITE);
+        sp.setBorder(new UIConstants.RoundedBorder(UIConstants.LIGHT_GREEN, 16));
         return sp;
+    }
+
+    // --- Background Image Logic ---
+    private void loadBackgroundImage() {
+        try {
+            java.net.URL url = getClass().getResource("/farm.jpeg");
+            if (url != null) {
+                backgroundImage = javax.imageio.ImageIO.read(url);
+                imageLoaded = true; return;
+            }
+            String base = System.getProperty("user.dir");
+            for (String p : new String[]{"/src/main/resources/farm.jpeg", "/resources/farm.jpeg", "/farm.jpeg"}) {
+                File f = new File(base + p);
+                if (f.exists()) { backgroundImage = Toolkit.getDefaultToolkit().getImage(f.getAbsolutePath()); imageLoaded = true; return; }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (imageLoaded && backgroundImage != null) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            // Adds a dark tint to the image so the sidebar text remains highly readable
+            g2.setColor(new Color(0, 0, 0, 50));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.dispose();
+        }
     }
 }

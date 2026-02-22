@@ -36,10 +36,8 @@ public class InputFormPanel extends JPanel {
 
         JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         leftHeader.setOpaque(false);
-        JLabel homeLabel = new JLabel("SCA Home");
-        homeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        homeLabel.setForeground(Color.WHITE);
-        leftHeader.add(homeLabel);
+        // Removed the "SCA Home" label from here as requested
+
         topPanel.add(leftHeader, BorderLayout.WEST);
         topPanel.add(createCenterHeader(), BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
@@ -210,22 +208,52 @@ public class InputFormPanel extends JPanel {
         return btn;
     }
 
+    // UPDATED: Now groups the logo and text horizontally
     private JPanel createCenterHeader() {
-        JPanel p = new JPanel();
-        p.setOpaque(false);
-        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
+        wrapper.setOpaque(false);
+
+        // Logo setup
+        JLabel logoLbl = new JLabel();
+        try {
+            ImageIcon icon = new ImageIcon("src/main/resources/logo.png");
+            if (icon.getIconWidth() > 0) {
+                Image scaledImg = icon.getImage().getScaledInstance(65, 65, Image.SCALE_SMOOTH);
+                logoLbl.setIcon(new ImageIcon(scaledImg));
+            } else {
+                logoLbl.setText("🌱");
+                logoLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+                logoLbl.setForeground(Color.WHITE);
+            }
+        } catch (Exception e) {
+            logoLbl.setText("🌱");
+            logoLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+            logoLbl.setForeground(Color.WHITE);
+        }
+
+        // Text setup
+        JPanel textPanel = new JPanel();
+        textPanel.setOpaque(false);
+        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+
         JLabel t1 = new JLabel("Smart Farming");
         t1.setFont(new Font("Arial", Font.BOLD, 28));
         t1.setForeground(Color.WHITE);
-        t1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        t1.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JLabel t2 = new JLabel("Crop Assistant");
         t2.setFont(new Font("Arial", Font.PLAIN, 22));
         t2.setForeground(Color.WHITE);
-        t2.setAlignmentX(Component.CENTER_ALIGNMENT);
-        p.add(Box.createVerticalStrut(14));
-        p.add(t1);
-        p.add(t2);
-        return p;
+        t2.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        textPanel.add(t1);
+        textPanel.add(t2);
+
+        // Add to wrapper
+        wrapper.add(logoLbl);
+        wrapper.add(textPanel);
+
+        return wrapper;
     }
 
     private void loadBackgroundImage() {

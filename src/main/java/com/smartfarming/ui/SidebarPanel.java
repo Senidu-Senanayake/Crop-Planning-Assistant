@@ -7,7 +7,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * Left sidebar navigation used by all inner result screens.
- * Glassmorphism style - semi-transparent frosted glass effect.
+ * Glassmorphism style - semi-transparent frosted glass effect with custom image logo.
  */
 public class SidebarPanel extends JPanel {
 
@@ -21,10 +21,10 @@ public class SidebarPanel extends JPanel {
 
     public SidebarPanel(AppFrame frame, String activeCard) {
         setPreferredSize(new Dimension(200, 0));
-        setOpaque(false); // ✅ transparent so background image shows through
+        setOpaque(false); // Transparent so background image shows through
         setLayout(new BorderLayout());
 
-        // ✅ Logo + brand area - glassmorphism
+        // --- Logo area (Glass style) ---
         JPanel logoArea = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -44,9 +44,27 @@ public class SidebarPanel extends JPanel {
         logoArea.setLayout(new BoxLayout(logoArea, BoxLayout.Y_AXIS));
         logoArea.setBorder(BorderFactory.createEmptyBorder(18, 0, 18, 0));
 
-        JLabel logo = new JLabel("🌿", SwingConstants.CENTER);
-        logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+        // Fixed JLabel constructor error
+        JLabel logo = new JLabel("", SwingConstants.CENTER);
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        try {
+            // Using a direct file path to match exactly how farm.jpeg is loaded!
+            ImageIcon icon = new ImageIcon("src/main/resources/logo.png");
+
+            // Check if the image successfully loaded by checking its width
+            if (icon.getIconWidth() > 0) {
+                Image scaledImg = icon.getImage().getScaledInstance(75, 75, Image.SCALE_SMOOTH);
+                logo.setIcon(new ImageIcon(scaledImg));
+            } else {
+                System.err.println("Logo image not found at src/main/resources/logo.png");
+                logo.setText("🌿");
+                logo.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
+            }
+        } catch (Exception e) {
+            logo.setText("🌿");
+            System.err.println("Error loading logo: " + e.getMessage());
+        }
 
         JLabel brand1 = new JLabel("Smart Farming", SwingConstants.CENTER);
         brand1.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -63,12 +81,13 @@ public class SidebarPanel extends JPanel {
         logoArea.add(brand1);
         logoArea.add(brand2);
 
-        // ✅ Nav buttons panel
+        // --- Nav buttons panel (Glass Style) ---
         JPanel navPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Darker glass tint for nav area
                 g2.setColor(new Color(0, 40, 0, 80));
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -86,7 +105,7 @@ public class SidebarPanel extends JPanel {
             navPanel.add(buildNavItem(frame, icon, label, card, active));
         }
 
-        // ✅ Back button area
+        // --- Back button area (Glass Style) ---
         JButton backBtn = UIConstants.makeButton("Back <");
         backBtn.setPreferredSize(new Dimension(150, 38));
         backBtn.setMaximumSize(new Dimension(170, 38));
@@ -125,7 +144,7 @@ public class SidebarPanel extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 if (active) {
-                    // ✅ Active - bright frosted glass with green tint + left accent bar
+                    // Active state: bright frosted glass with green tint + left accent bar
                     g2.setColor(new Color(255, 255, 255, 60));
                     g2.fillRect(0, 0, getWidth(), getHeight());
                     g2.setColor(new Color(80, 200, 80, 120));
@@ -134,7 +153,7 @@ public class SidebarPanel extends JPanel {
                     g2.setColor(new Color(150, 255, 150, 220));
                     g2.fillRect(0, 0, 4, getHeight());
                 } else {
-                    // Subtle glass
+                    // Inactive state: very subtle glass
                     g2.setColor(new Color(255, 255, 255, 10));
                     g2.fillRect(0, 0, getWidth(), getHeight());
                 }
@@ -188,10 +207,10 @@ public class SidebarPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        // The base glass layer for the entire sidebar background
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        // ✅ Main sidebar glass layer - dark green tint with transparency
-        g2.setColor(new Color(10, 60, 10, 160));
+        g2.setColor(new Color(10, 60, 10, 160)); // Dark green glass tint
         g2.fillRect(0, 0, getWidth(), getHeight());
         g2.dispose();
     }
